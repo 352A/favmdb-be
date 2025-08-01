@@ -29,32 +29,42 @@ exports.createEntry = async (req, res) => {
 exports.getEntries = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { title, type, year } = req.query;
+    const { cursor, limit = 10, title, type, year } = req.query;
 
-    const conditions = [{ userId }];
+    const where = { userId };
+
+    if (cursor) {
+      where.createdAt = { [Op.lt]: new Date(cursor) }; // fetch older than cursor
+    }
 
     if (title) {
-      conditions.push(
-        whereClause(fn("LOWER", col("title")), {
-          [Op.like]: `%${title.toLowerCase()}%`,
-        })
-      );
+      where.title = { [Op.like]: `%${title}%` };
     }
 
     if (type) {
-      conditions.push({ type });
+      where.type = type;
     }
 
     if (year) {
-      conditions.push({ year });
+      where.year = year;
     }
 
     const entries = await Entry.findAll({
-      where: { [Op.and]: conditions },
+      where,
       order: [["createdAt", "DESC"]],
+      limit: parseInt(limit),
     });
 
-    res.json(entries);
+    const nextCursor =
+      entries.length > 0
+        ? entries[entries.length - 1].createdAt.toISOString()
+        : null;
+
+    res.json({
+      entries,
+      nextCursor,
+      hasMore: entries.length === parseInt(limit),
+    });
   } catch (err) {
     console.error("Failed to fetch entries:", err);
     res.status(500).json({ error: "Something went wrong fetching entries" });

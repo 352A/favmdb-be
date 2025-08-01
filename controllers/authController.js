@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { User } = require("../models/User");
+const User = require("../models/User");
 const createToken = require("../utils/createToken");
 
 exports.signup = async (req, res) => {
@@ -16,9 +16,15 @@ exports.signup = async (req, res) => {
     const user = await User.create({ name, email, password: hashedPassword });
     const token = createToken(user);
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.status(201).json({
       message: "User registered successfully",
-      token,
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
@@ -30,26 +36,36 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const token = createToken(user);
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.json({
-      message: "Login successful",
-      token,
+      message: "Logged in successfully",
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Server error" });
   }
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.json({ message: "Logged out successfully" });
 };
