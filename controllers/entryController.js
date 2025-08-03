@@ -3,8 +3,18 @@ const { Op, fn, col, where: whereClause } = require("sequelize");
 
 exports.createEntry = async (req, res) => {
   try {
-    const { title, type, director, budget, location, duration, year, details } =
-      req.body;
+    const {
+      title,
+      type,
+      director,
+      budget,
+      location,
+      durationHours,
+      durationMinutes,
+      seasons,
+      year,
+      details,
+    } = req.body;
     const userId = req.user.id;
 
     const entry = await Entry.create({
@@ -13,7 +23,9 @@ exports.createEntry = async (req, res) => {
       director,
       budget,
       location,
-      duration,
+      durationHours,
+      durationMinutes,
+      seasons,
       year,
       details,
       userId,
@@ -29,7 +41,18 @@ exports.createEntry = async (req, res) => {
 exports.getEntries = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { cursor, limit = 10, title, type, year } = req.query;
+    const {
+      cursor,
+      limit = 10,
+      title,
+      type,
+      year,
+      director,
+      location,
+      budget,
+      minBudget,
+      maxBudget,
+    } = req.query;
 
     const where = { userId };
 
@@ -47,6 +70,25 @@ exports.getEntries = async (req, res) => {
 
     if (year) {
       where.year = year;
+    }
+
+    if (director) {
+      where.director = { [Op.like]: `%${director}%` };
+    }
+
+    if (location) {
+      where.location = { [Op.like]: `%${location}%` };
+    }
+
+    if (budget) {
+      where.budget = budget;
+    }
+
+    if (minBudget || maxBudget) {
+      where.budget = {
+        ...(minBudget && { [Op.gte]: Number(minBudget) }),
+        ...(maxBudget && { [Op.lte]: Number(maxBudget) }),
+      };
     }
 
     const entries = await Entry.findAll({

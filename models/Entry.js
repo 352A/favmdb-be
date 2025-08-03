@@ -15,7 +15,7 @@ const Entry = sequelize.define(
       allowNull: false,
     },
     type: {
-      type: DataTypes.STRING, // e.g., "Movie" or "TV Show"
+      type: DataTypes.ENUM("Movie", "TV Show"),
       allowNull: false,
     },
     director: {
@@ -23,19 +23,27 @@ const Entry = sequelize.define(
       allowNull: false,
     },
     budget: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     location: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    duration: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    durationHours: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    durationMinutes: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    seasons: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     year: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     details: {
@@ -45,6 +53,39 @@ const Entry = sequelize.define(
   },
   {
     timestamps: true,
+    hooks: {
+      beforeValidate: (entry) => {
+        if (entry.type === "Movie") {
+          const hours = entry.durationHours;
+          const minutes = entry.durationMinutes;
+
+          if (
+            typeof hours !== "number" ||
+            typeof minutes !== "number" ||
+            hours < 0 ||
+            minutes < 0 ||
+            minutes > 59
+          ) {
+            throw new Error(
+              "Movies must have valid durationHours and durationMinutes (0–59)"
+            );
+          }
+
+          entry.seasons = null;
+        } else if (entry.type === "TV Show") {
+          if (typeof entry.seasons !== "number" || entry.seasons < 1) {
+            throw new Error(
+              "TV Shows must have a valid number of seasons (1+)"
+            );
+          }
+
+          entry.durationHours = null;
+          entry.durationMinutes = null;
+        } else {
+          throw new Error("Invalid type. Must be 'Movie' or 'TV Show'");
+        }
+      },
+    },
   }
 );
 
