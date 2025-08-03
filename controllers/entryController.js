@@ -5,7 +5,7 @@ exports.createEntry = async (req, res) => {
   try {
     const { title, type, director, budget, location, duration, year, details } =
       req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const entry = await Entry.create({
       title,
@@ -28,7 +28,7 @@ exports.createEntry = async (req, res) => {
 
 exports.getEntries = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { cursor, limit = 10, title, type, year } = req.query;
 
     const where = { userId };
@@ -74,7 +74,7 @@ exports.getEntries = async (req, res) => {
 exports.updateEntry = async (req, res) => {
   try {
     const entryId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const updatedData = req.body;
 
     const entry = await Entry.findOne({ where: { id: entryId, userId } });
@@ -94,7 +94,7 @@ exports.updateEntry = async (req, res) => {
 exports.deleteEntry = async (req, res) => {
   try {
     const entryId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const entry = await Entry.findOne({ where: { id: entryId, userId } });
 
@@ -113,7 +113,7 @@ exports.deleteEntry = async (req, res) => {
 exports.getEntryById = async (req, res) => {
   try {
     const entryId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const entry = await Entry.findOne({ where: { id: entryId, userId } });
 

@@ -2,15 +2,18 @@ const { z } = require("zod");
 
 const entrySchema = z.object({
   title: z.string().min(1, "Title is required"),
-  type: z.enum(["Movie", "TV Show"], {
-    errorMap: () => ({ message: "Type must be 'Movie' or 'TV Show'" }),
-  }),
+  type: z.string().min(1, "Type is required"),
   director: z.string().min(1, "Director is required"),
-  budget: z.string().min(1, "Budget is required"),
+  budget: z.string(),
   location: z.string().min(1, "Location is required"),
   duration: z.string().min(1, "Duration is required"),
-  year: z.string().min(1, "Year is required"),
-  details: z.string().optional(),
+  year: z
+    .number()
+    .int("Year must be an integer")
+    .min(1800, "Year must be valid")
+    .max(new Date().getFullYear() + 5, "Year is too far in the future"),
+  details: z.string().min(1, "Details are required"),
+  userId: z.number().optional(),
 });
 
 module.exports = { entrySchema };
