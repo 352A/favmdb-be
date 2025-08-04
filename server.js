@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const sequelize = require("./config/database");
 const cookieParser = require("cookie-parser");
+const connectWithRetry = require("./utils/connectWithRetry");
 
 // Load models
 require("./models/User");
@@ -34,18 +35,13 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-sequelize
-  .authenticate()
+connectWithRetry(sequelize)
   .then(() => {
-    console.log("Database connected");
-    return sequelize.sync({ alter: true });
-  })
-  .then(() => {
-    console.log("Models synced");
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
-    console.error("DB connection error:", err);
+    console.error("💥 Failed to start server due to DB error:", err);
+    process.exit(1);
   });
